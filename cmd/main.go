@@ -2,16 +2,10 @@ package main
 
 import (
 	"github.com/nixmaldonado/blazeMailer/config"
-	"log"
-	"net/smtp"
+	"github.com/nixmaldonado/blazeMailer/server"
 )
 
 func main() {
 	config.InitConfig()
-
-
-}
-
-func initMailer() {
-	// TODO init server
+	server.HandleRequests()
 }

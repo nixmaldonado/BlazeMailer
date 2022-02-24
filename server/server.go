@@ -1,15 +1,19 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/nixmaldonado/blazeMailer/config"
+	"github.com/nixmaldonado/blazeMailer/models"
 	"log"
 	"net/http"
 	"net/smtp"
 )
 
-func handleRequests() {
+func HandleRequests() {
 	http.HandleFunc("/ping", ping)
 	http.HandleFunc("/email/send", sendEmail)
+	log.Println("listening on port 3000")
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
 
@@ -18,26 +22,28 @@ func ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendEmail(w http.ResponseWriter, r *http.Request) {
+	var p models.SendEmailRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	cfg := config.Spec
 	password := cfg.SMTPPassword
 	smtpHost := cfg.SMTPHost
 	smtpPort := cfg.SMTPPort
 
-	from := "nixsm@yahoo.com"
-	to := "nixmaldonado@gmail.com"
-	msg := []byte("To: nixmaldonado@gmail.com\r\n" +
-		"Subject: Blaze Mail Hello World!\r\n" +
-		"\r\n" +
-		"This is the email body Blaze the world!\r\n")
-
 	// Create authentication
-	auth := smtp.PlainAuth("", from, password, smtpHost)
+	auth := smtp.PlainAuth("", p.From, password, smtpHost)
 
-	recipients := []string{to}
-
-	// Send actual message
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, recipients, msg)
-	if err != nil {
-		log.Fatal("error: ", err)
+	for _, to := range p.To { //TODO do I need to loop or I can just add all recipients?
+		mail := fmt.Sprintf("To: %v\r\nSubject: %v\r\n\r\n%v\r\n", to, p.Subject, p.Body)
+		// Send actual message
+		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, p.To, []byte(mail))
+		if err != nil {
+			log.Fatal("error: ", err)
+		}
 	}
+
 }
