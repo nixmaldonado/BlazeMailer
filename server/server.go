@@ -37,13 +37,12 @@ func sendEmail(w http.ResponseWriter, r *http.Request) {
 	// Create authentication
 	auth := smtp.PlainAuth("", p.From, password, smtpHost)
 
-	for _, to := range p.To { //TODO do I need to loop or I can just add all recipients?
-		mail := fmt.Sprintf("To: %v\r\nSubject: %v\r\n\r\n%v\r\n", to, p.Subject, p.Body)
-		// Send actual message
-		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, p.To, []byte(mail))
-		if err != nil {
-			log.Fatal("error: ", err)
-		}
+	mail := fmt.Sprintf("To: %v\r\nSubject: %v\r\n\r\n%v\r\n", p.To[0], p.Subject, p.Body)
+	// Send actual message
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, p.To, []byte(mail))
+	if err != nil {
+		log.Fatal("error: ", err)
 	}
 
+	w.Write([]byte(fmt.Sprint("email sent successfully to ", p.To[0])))
 }
