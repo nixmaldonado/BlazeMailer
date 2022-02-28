@@ -23,12 +23,12 @@ Plus boilerplate code to handle your credentials with env vars.
         
 * Perform HTTP request to send mail:
  
-      curl --request GET 'http://localhost:3000/email/send' \
+      curl --request POST 'http://localhost:3000/email/send' \
       --header 'Content-Type: application/json' \
       --data-raw '{
           "from": "sender@mail.com",
-          "to": ["recipient@mail.com"],
-          "subject":"Thi is Blaze Mailer",
+          "to": "recipient@mail.com",
+          "subject":"This is Blaze Mailer",
           "body": "Hello World!"
       }'
       

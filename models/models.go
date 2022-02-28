@@ -1,8 +1,14 @@
 package models
 
 type SendEmailRequest struct {
-	From    string   `json:"from"`
-	To      []string `json:"to"`
-	Subject string   `json:"subject"`
-	Body    string   `json:"body"`
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+}
+
+type SendEmailResponse struct {
+	Success   bool   `json:"success"`
+	Recipient string `json:"recipient,omitempty"`
+	Error     string `json:"error,omitempty"`
 }

@@ -25,8 +25,7 @@ func sendEmail(w http.ResponseWriter, r *http.Request) {
 	var p models.SendEmailRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		writeErrorResponse(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -39,14 +38,18 @@ func sendEmail(w http.ResponseWriter, r *http.Request) {
 	auth := smtp.PlainAuth("", p.From, password, smtpHost)
 
 	// Format message
-	mail := fmt.Sprintf("To: %v\r\nSubject: %v\r\n\r\n%v\r\n", p.To[0], p.Subject, p.Body)
+	mail := fmt.Sprintf("To: %v\r\nSubject: %v\r\n\r\n%v\r\n", p.To, p.Subject, p.Body)
 
 	// Send actual message
-	if err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, p.To, []byte(mail)); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+	if err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, []string{p.To}, []byte(mail)); err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	w.Write([]byte(fmt.Sprint("email sent successfully to ", p.To[0])))
+	json.NewEncoder(w).Encode(models.SendEmailResponse{Success: true, Recipient: p.To})
+}
+
+func writeErrorResponse(w http.ResponseWriter, statusCode int, err error) {
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(models.SendEmailResponse{Success: false, Error: err.Error()})
 }
