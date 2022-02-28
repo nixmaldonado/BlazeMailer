@@ -6,10 +6,9 @@ import (
 )
 
 type Specification struct {
-	Origin       string `envconfig:"from"`
 	SMTPPassword string `envconfig:"SMTP_PASSWORD"`
-	SMTPHost     string `envconfig:"SMPT_HOST" default:"smtp.gmail.com"`
-	SMTPPort     string `envconfig:"SMTP_PORT" default:"587"`
+	SMTPHost     string `envconfig:"SMPT_HOST"`
+	SMTPPort     string `envconfig:"SMTP_PORT"`
 }
 
 var Spec Specification

@@ -25,6 +25,7 @@ func sendEmail(w http.ResponseWriter, r *http.Request) {
 	var p models.SendEmailRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
@@ -37,11 +38,14 @@ func sendEmail(w http.ResponseWriter, r *http.Request) {
 	// Create authentication
 	auth := smtp.PlainAuth("", p.From, password, smtpHost)
 
+	// Format message
 	mail := fmt.Sprintf("To: %v\r\nSubject: %v\r\n\r\n%v\r\n", p.To[0], p.Subject, p.Body)
+
 	// Send actual message
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, p.To, []byte(mail))
-	if err != nil {
-		log.Fatal("error: ", err)
+	if err := smtp.SendMail(smtpHost+":"+smtpPort, auth, p.From, p.To, []byte(mail)); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	w.Write([]byte(fmt.Sprint("email sent successfully to ", p.To[0])))
