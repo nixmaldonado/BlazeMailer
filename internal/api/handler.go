@@ -2,19 +2,22 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
-	"github.com/nixmaldonado/blazeMailer/internal/delivery"
 	"github.com/nixmaldonado/blazeMailer/internal/model"
+	"github.com/nixmaldonado/blazeMailer/internal/queue"
 )
 
 type Server struct {
-	sender delivery.Sender
+	queue queue.Queue
 }
 
-func NewServer(s delivery.Sender) *Server { return &Server{sender: s} }
+func NewServer(q queue.Queue) *Server { return &Server{queue: q} }
 
 func (s *Server) Routes() http.Handler {
 	r := chi.NewRouter()
@@ -37,11 +40,20 @@ func (s *Server) sendEmail(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := s.sender.Send(r.Context(), req); err != nil {
+	job := model.Job{
+		ID:         uuid.NewString(),
+		Email:      req,
+		EnqueuedAt: time.Now(),
+	}
+	if err := s.queue.Enqueue(r.Context(), job); err != nil {
+		if errors.Is(err, queue.ErrQueueFull) || errors.Is(err, queue.ErrQueueClosed) {
+			writeErr(w, http.StatusServiceUnavailable, "queue unavailable, retry later")
+			return
+		}
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, model.SendEmailResponse{Success: true})
+	writeJSON(w, http.StatusAccepted, model.SendEmailResponse{Success: true, JobID: job.ID})
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
