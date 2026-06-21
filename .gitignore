@@ -1,1 +1,9 @@
 .idea/
+
+# Build & coverage artifacts
+bin/
+coverage.out
+
+# Local planning & working artifacts
+docs/
+.scratch/
